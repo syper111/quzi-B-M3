@@ -266,6 +266,36 @@
             color: #ff3366;
         }
         
+        /* تصميم تبويب التنبيهات الداخلي المخصص (بدل رسائل المتصفح المزعجة) */
+        #custom-alert-box {
+            display: none;
+            background: rgba(255, 51, 102, 0.15);
+            border: 1px solid #ff3366;
+            border-radius: 12px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            text-align: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        #custom-alert-box p {
+            color: #ff3366;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .btn-alert-close {
+            background: #ff3366;
+            color: #fff;
+            border: none;
+            padding: 6px 15px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
         #result-box {
             display: none;
             text-align: center;
@@ -387,11 +417,20 @@
                 <h1>امتحان مادة النمذجة الهدف ب (النموذج الثالث)</h1>
                 <h2>الصف العاشر - المستوى الثاني</h2>
             </div>
+            
+            <!-- تبويب التنبيه الداخلي الخاص بنقص البيانات أو أخطاء الإدخال -->
+            <div id="welcome-alert-box" style="display: none; background: rgba(255, 51, 102, 0.15); border: 1px solid #ff3366; border-radius: 10px; padding: 10px; margin-bottom: 15px; color: #ff3366; font-size: 12px; font-weight: bold;">
+                الرجاء إدخال اسم الطالبة الثلاثي الصحيح قبل البدء بالامتحان!
+            </div>
+
             <div class="input-group">
                 <label for="studentNameInput">أدخلي اسم الطالبة الثلاثي:</label>
                 <input type="text" id="studentNameInput" placeholder="اكتبي اسمك هنا..." autocomplete="off">
             </div>
-            <p>يتكون هذا النموذج من 20 سؤالاً جديداً بالكامل ضمن الهدف ب، وتقيس مهارات متقدمة في النمذجة وتحليل البيانات.</p>
+            
+            <!-- ملاحظة تصحيح الترحيب -->
+            <p>أهلاً بكِ في منصة الاختبارات الإلكترونية المطورة. يرجى التركيز وقراءة الأسئلة بدقة.</p>
+            
             <button type="button" class="btn-main" onclick="startQuiz()">ابدأ الاختبار الآن</button>
         </div>
 
@@ -405,6 +444,13 @@
                 <h1 id="section-title">امتحان مادة النمذجة الهدف ب</h1>
                 <p id="section-subtitle">الأسئلة المطورة (20 سؤالاً جديداً غير تكرارية)</p>
             </header>
+            
+            <!-- تبويب التنبيهات المخصص داخل صفحة الأسئلة (بدل رسائل المتصفح المنبثقة) -->
+            <div id="custom-alert-box">
+                <p id="custom-alert-text">رسالة التنبيه تظهر هنا</p>
+                <button type="button" class="btn-alert-close" onclick="closeCustomAlert()">حسناً، فهمت</button>
+            </div>
+
             <div class="progress-bar-container">
                 <div class="progress-bar" id="progressBar"></div>
             </div>
@@ -600,6 +646,19 @@
         let finalScore = 0;
         let wrongQuestionsList = [];
 
+        // دالة عرض تبويب التنبيهات المخصص داخل الصفحة
+        function showCustomAlert(message) {
+            const alertBox = document.getElementById('custom-alert-box');
+            const alertText = document.getElementById('custom-alert-text');
+            alertText.innerText = message;
+            alertBox.style.display = 'block';
+            alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function closeCustomAlert() {
+            document.getElementById('custom-alert-box').style.display = 'none';
+        }
+
         document.addEventListener("visibilitychange", function() {
             if (document.hidden && isExamActive) {
                 handleCheatingDetected();
@@ -614,7 +673,7 @@
 
         function handleCheatingDetected() {
             isExamActive = false;
-            alert("⚠️ تنبيه: تم رصد مغادرة شاشة الامتحان أو تغيير التبويب! تعتبر هذه محاولة غش، وسيتم تصفير النتيجة فوراً.");
+            showCustomAlert("⚠️ تنبيه: تم رصد مغادرة شاشة الامتحان أو تغيير التبويب! تم تصفير النتيجة فوراً.");
             
             initialScore = 0;
             finalScore = 0;
@@ -629,7 +688,7 @@
             resultBox.style.display = 'block';
             document.getElementById('first-score-val').innerText = `0 / 40`;
             document.getElementById('status-badge').innerText = "تم إلغاء النتيجة بسبب الغش";
-            document.getElementById('score-text').innerText = `للأسف يا ${studentFullName}، تم رصد مغادرة الصفحة وتم تصفير النتيجة فوراً.`;
+            document.getElementById('score-text').innerText = `للأسف يا ${studentFullName}، تم رصد مغادرة الصفحة وتصفير النتيجة.`;
             document.getElementById('btnRetryWrong').style.display = 'none';
             
             resultBox.scrollIntoView({ behavior: 'smooth' });
@@ -660,9 +719,11 @@
         function startQuiz() {
             const nameInput = document.getElementById('studentNameInput').value.trim();
             if (!nameInput) {
-                alert("الرجاء إدخال اسم الطالبة أولاً قبل البدء!");
+                document.getElementById('welcome-alert-box').style.display = 'block';
                 document.getElementById('studentNameInput').focus();
                 return;
+            } else {
+                document.getElementById('welcome-alert-box').style.display = 'none';
             }
 
             studentFullName = nameInput;
@@ -733,7 +794,7 @@
             });
 
             if (!allAnswered) {
-                alert("الرجاء الإجابة على جميع الأسئلة الظاهرة قبل الاعتماد!");
+                showCustomAlert("الرجاء الإجابة على جميع الأسئلة الظاهرة قبل اعتماد النتيجة!");
                 return;
             }
 
@@ -859,8 +920,7 @@
         }
 
         function exitQuizSession() {
-            alert("تم إغلاق الجلسة بنجاح. شكراً لكِ!");
-            window.close();
+            showCustomAlert("تم إغلاق الجلسة بنجاح. شكراً لكِ!");
         }
     </script>
 </body>
