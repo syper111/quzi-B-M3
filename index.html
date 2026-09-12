@@ -244,7 +244,6 @@
             flex-shrink: 0;
         }
 
-        /* اتجاه الدوال والصيغ الإنجليزية من اليسار لليمين */
         .code-option {
             direction: ltr;
             text-align: left;
@@ -415,7 +414,7 @@
                 <button type="button" class="btn-main" id="submitBtn" onclick="processSubmissions()" style="margin-top: 12px;">اعتماد الإجابات وعرض النتيجة</button>
             </form>
 
-            <!-- لوحة النتائج والأزرار (تعرض النتيجة الأولى والثانية معاً) -->
+            <!-- لوحة النتائج والأزرار -->
             <div id="result-box">
                 <h2 id="result-box-title">لوحة النتائج الرقمية</h2>
                 <div class="student-name-display" id="resultStudentName">اسم الطالبة: -</div>
@@ -427,7 +426,7 @@
                         <span>النتيجة الأولى</span>
                         <strong id="first-score-val">0 / 40</strong>
                     </div>
-                    <!-- النتيجة بعد التدارك (تظهر إن وجدت أخطاء) -->
+                    <!-- النتيجة بعد التدارك -->
                     <div class="result-stat-card" id="second-score-card" style="display: none;">
                         <span>العلامة بعد التدارك</span>
                         <strong id="after-score-val" style="color: var(--neon-green-bright);">0 / 40</strong>
@@ -437,7 +436,6 @@
                 <p id="score-text" style="color: var(--text-muted); font-size: 12px; margin-bottom: 14px;"></p>
 
                 <div class="action-buttons-group">
-                    <!-- زر جولة الأخطاء -->
                     <button type="button" class="btn-action-custom btn-retry-wrong" id="btnRetryWrong" onclick="startWrongReview()" style="display: none;">إعادة الأخطاء وتداركها الآن</button>
                     <button type="button" class="btn-action-custom btn-restart" onclick="location.reload()">إعادة الاختبار كلياً</button>
                     <button type="button" class="btn-action-custom btn-exit" onclick="exitQuizSession()">خروج وحفظ النتيجة</button>
@@ -452,6 +450,7 @@
 
     <script>
         let studentFullName = "";
+        let isExamActive = false;
 
         const originalQuizData = [{
             id: 1,
@@ -590,7 +589,7 @@
             id: 20,
             weight: 2,
             question: "ما هي الخطوة البرمجية التنفيذية الأخيرة بعد اكتمال تصميم واختبار نموذج البيانات المالي أو الإداري؟",
-            options: ["حفظ النموذج، توثيق مستنداته، وتدريب المستخدمين النهائيين على تشغيله بكفاءة.", "حذف كود المصدر نهائياً.", "تغيير اسم الملف كل ساعة.", "إغلاق الشاشة دون حفظ."],
+            options: ["حفظ النموذج، توثيق مستندات، وتدريب المستخدمين النهائيين على تشغيله بكفاءة.", "حذف كود المصدر نهائياً.", "تغيير اسم الملف كل ساعة.", "إغلاق الشاشة دون حفظ."],
             correct: 0,
             isCode: false
         }];
@@ -601,7 +600,41 @@
         let finalScore = 0;
         let wrongQuestionsList = [];
 
-        // دالة إطلاق مؤثرات الفرح والبهجة والألعاب النارية عند العلامة الكاملة
+        document.addEventListener("visibilitychange", function() {
+            if (document.hidden && isExamActive) {
+                handleCheatingDetected();
+            }
+        });
+
+        window.addEventListener("blur", function() {
+            if (isExamActive) {
+                handleCheatingDetected();
+            }
+        });
+
+        function handleCheatingDetected() {
+            isExamActive = false;
+            alert("⚠️ تنبيه: تم رصد مغادرة شاشة الامتحان أو تغيير التبويب! تعتبر هذه محاولة غش، وسيتم تصفير النتيجة فوراً.");
+            
+            initialScore = 0;
+            finalScore = 0;
+            
+            const radios = document.querySelectorAll('input[type="radio"]');
+            radios.forEach(r => r.disabled = true);
+            
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn) submitBtn.style.display = 'none';
+
+            const resultBox = document.getElementById('result-box');
+            resultBox.style.display = 'block';
+            document.getElementById('first-score-val').innerText = `0 / 40`;
+            document.getElementById('status-badge').innerText = "تم إلغاء النتيجة بسبب الغش";
+            document.getElementById('score-text').innerText = `للأسف يا ${studentFullName}، تم رصد مغادرة الصفحة وتم تصفير النتيجة فوراً.`;
+            document.getElementById('btnRetryWrong').style.display = 'none';
+            
+            resultBox.scrollIntoView({ behavior: 'smooth' });
+        }
+
         function triggerCelebration() {
             if (typeof confetti === 'function') {
                 var duration = 3 * 1000;
@@ -640,6 +673,9 @@
             document.getElementById('quiz-section').style.display = 'block';
             currentStage = 'main';
             activeData = [...originalQuizData];
+            
+            isExamActive = true;
+            
             renderQuestions();
             updateProgress();
         }
@@ -700,6 +736,8 @@
                 alert("الرجاء الإجابة على جميع الأسئلة الظاهرة قبل الاعتماد!");
                 return;
             }
+
+            isExamActive = false;
 
             if (currentStage === 'main') {
                 initialScore = 0;
@@ -762,7 +800,7 @@
             if (score === 40) {
                 statusBadge.innerText = "علامة كاملة - ممتاز!";
                 scoreText.innerText = `أداء مذهل يا ${studentFullName}! لقد أجبت على كافة الأسئلة الجديدة بشكل صحيح تماماً.`;
-                triggerCelebration(); // تفعيل ألعاب الفرح والاحتفال
+                triggerCelebration();
             } else if (score >= 30) {
                 statusBadge.innerText = "نتيجة ممتازة";
                 scoreText.innerText = `أداء رائع جداً يا ${studentFullName}، لديك إجابات صحيحة في أغلب الأسئلة المطورة.`;
@@ -791,6 +829,7 @@
             document.getElementById('submitBtn').style.display = 'block';
             document.getElementById('submitBtn').innerText = 'اعتماد إجابات التدارك';
 
+            isExamActive = true;
             renderQuestions();
             updateProgress();
         }
@@ -809,19 +848,19 @@
 
             if (score === 40) {
                 statusBadge.innerText = "العلامة الكاملة بعد التدارك!";
-                scoreText.innerText = `رائع جداً يا ${studentFullName}! نجحت في تصحيح كافة أخطائك والوصول للعلامة التامة بنجاح.`;
-                triggerCelebration(); // تفعيل ألعاب الفرح والاحتفال
+                scoreText.innerText = `ممتاز يا ${studentFullName}! استطعت تدارك جميع الأخطاء والوصول للعلامة الكاملة.`;
+                triggerCelebration();
             } else {
-                statusBadge.innerText = "تم إتمام التدارك بنجاح";
-                scoreText.innerText = `نتيجتك النهائية يا ${studentFullName} بعد تصحيح الأخطاء أصبحت ${score} من 40.`;
+                statusBadge.innerText = "تم تحديث النتيجة";
+                scoreText.innerText = `عمل جيد يا ${studentFullName} في تدارك الأخطاء.`;
             }
 
             resultBox.scrollIntoView({ behavior: 'smooth' });
         }
 
         function exitQuizSession() {
-            alert(`تم حفظ النتيجة للطالبة: ${studentFullName} بنجاح. شكراً لك!`);
-            location.reload();
+            alert("تم إغلاق الجلسة بنجاح. شكراً لكِ!");
+            window.close();
         }
     </script>
 </body>
