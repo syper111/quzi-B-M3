@@ -309,6 +309,53 @@
             cursor: pointer;
         }
 
+        /* نافذة تحذير الغش المركزية في منتصف الشاشة */
+        #cheating-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(2, 32, 20, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .cheating-modal-card {
+            background: rgba(6, 38, 24, 0.98);
+            border: 2px solid #ff3366;
+            border-radius: 20px;
+            padding: 25px;
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(255, 51, 102, 0.3);
+            animation: scaleUp 0.3s ease;
+        }
+
+        .cheating-modal-card h3 {
+            color: #ff3366;
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+        .cheating-modal-card p {
+            color: var(--text-muted);
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        @keyframes scaleUp {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
         #result-box {
             display: none;
             text-align: center;
@@ -423,6 +470,15 @@
 
 <body>
 
+    <!-- تبويب تحذير الغش بمنتصف الشاشة -->
+    <div id="cheating-overlay">
+        <div class="cheating-modal-card">
+            <h3>🚨 تنبيه رصد محاولة غش</h3>
+            <p>تم رصد مغادرة شاشة الامتحان أو تغيير التبويب أو التطبيق! يعتبر هذا إجراءً مخالفاً لقواعد النزاهة وسيتم تصفير النتيجة فوراً.</p>
+            <button type="button" class="btn-main" onclick="confirmCheatingPenalty()">حسناً</button>
+        </div>
+    </div>
+
     <div class="container">
         <!-- شاشة الترحيب وإدخال الاسم -->
         <div id="welcome-screen">
@@ -431,12 +487,10 @@
                 <h2>الصف العاشر - المستوى الثاني</h2>
             </div>
             
-            <!-- تبويب تنبيه نقص الاسم -->
             <div id="welcome-alert-box" style="display: none; background: rgba(255, 51, 102, 0.15); border: 1px solid #ff3366; border-radius: 10px; padding: 10px; margin-bottom: 15px; color: #ff3366; font-size: 12px; font-weight: bold;">
                 الرجاء إدخال اسم الطالبة الثلاثي الصحيح قبل البدء بالامتحان!
             </div>
 
-            <!-- ملاحظة الغش الجديدة -->
             <div class="cheating-warning-note">
                 ⚠️ <strong>تنبيه هامة جداً:</strong> مغادرة صفحة الامتحان أو تغيير التبويب (التطبيقات أو المتصفح) يعتبر حالة <strong>غش صريحة</strong>، وسيتسبب في إلغاء الامتحان وتصفير النتيجة فوراً.
             </div>
@@ -462,7 +516,6 @@
                 <p id="section-subtitle">الأسئلة المطورة (20 سؤالاً جديداً غير تكرارية)</p>
             </header>
             
-            <!-- تبويب التنبيهات المخصص داخل صفحة الأسئلة (عند محاولة الغش أو ترك الأسئلة فارغة) -->
             <div id="custom-alert-box">
                 <p id="custom-alert-text">رسالة التنبيه تظهر هنا</p>
                 <button type="button" class="btn-alert-close" onclick="closeCustomAlert()">حسناً، فهمت</button>
@@ -484,12 +537,10 @@
                 <div class="badge-tag" id="status-badge">تم التصحيح بنجاح</div>
                 
                 <div class="result-stats-grid" id="stats-grid-container">
-                    <!-- النتيجة الأولى -->
                     <div class="result-stat-card">
                         <span>النتيجة الأولى</span>
                         <strong id="first-score-val">0 / 40</strong>
                     </div>
-                    <!-- النتيجة بعد التدارك -->
                     <div class="result-stat-card" id="second-score-card" style="display: none;">
                         <span>العلامة بعد التدارك</span>
                         <strong id="after-score-val" style="color: var(--neon-green-bright);">0 / 40</strong>
@@ -663,7 +714,6 @@
         let finalScore = 0;
         let wrongQuestionsList = [];
 
-        // دالة عرض تبويب التنبيهات المخصص داخل الصفحة
         function showCustomAlert(message) {
             const alertBox = document.getElementById('custom-alert-box');
             const alertText = document.getElementById('custom-alert-text');
@@ -691,27 +741,33 @@
 
         function handleCheatingDetected() {
             isExamActive = false;
+            // إظهار نافذة التنبيه بمنتصف الشاشة
+            document.getElementById('cheating-overlay').style.display = 'flex';
+        }
+
+        function confirmCheatingPenalty() {
+            // إخفاء نافذة التحذير
+            document.getElementById('cheating-overlay').style.display = 'none';
             
-            // إخفاء أسئلة الامتحان ونموذج الإجابة فوراً
+            // إخفاء أسئلة الامتحان
             const formElement = document.getElementById('quizForm');
             if (formElement) formElement.style.display = 'none';
 
-            // إظهار التبويب التحذيري المخصص الخاص بالغش مع زر إغلاق يعرض النتيجة المُصفّرة
-            showCustomAlert("🚨 <strong>تنبيه غش:</strong> تم رصد مغادرة شاشة الامتحان أو تغيير التبويب! اضغط على زر (حسناً، فهمت) أدناه لعرض النتيجة المُصفّرة.");
-            
             initialScore = 0;
             finalScore = 0;
             
             const radios = document.querySelectorAll('input[type="radio"]');
             radios.forEach(r => r.disabled = true);
 
-            // تجهيز لوحة النتائج لتظهر النتيجة صفر
+            // إظهار النتيجة صفر في لوحة النتائج
             const resultBox = document.getElementById('result-box');
             resultBox.style.display = 'block';
             document.getElementById('first-score-val').innerText = `0 / 40`;
             document.getElementById('status-badge').innerText = "تم إلغاء النتيجة بسبب الغش";
-            document.getElementById('score-text').innerText = `للأسف يا ${studentFullName}، تم رصد مغادرة التبويب وتصفير النتيجة نهائياً.`;
+            document.getElementById('score-text').innerText = `للأسف يا ${studentFullName || 'طالبة'}، تم رصد مغادرة التبويب وتصفير النتيجة نهائياً.`;
             document.getElementById('btnRetryWrong').style.display = 'none';
+            
+            resultBox.scrollIntoView({ behavior: 'smooth' });
         }
 
         function triggerCelebration() {
@@ -836,113 +892,87 @@
                         document.getElementById(`label-${currentStage}-${index}-${selectedVal}`).classList.add('wrong-ans');
                         document.getElementById(`label-${currentStage}-${index}-${q.correct}`).classList.add('correct-ans');
                     }
-
-                    const radios = document.querySelectorAll(`input[name="question_${currentStage}_${index}"]`);
-                    radios.forEach(r => r.disabled = true);
                 });
 
-                document.getElementById('submitBtn').style.display = 'none';
-                showFirstReport(initialScore);
+                finalScore = initialScore;
+                document.getElementById('first-score-val').innerText = `${initialScore} / 40`;
+                
+                if (initialScore === 40) {
+                    document.getElementById('status-badge').innerText = "علامة كاملة - متميز جداً!";
+                    document.getElementById('score-text').innerText = `أبدعتِ حقاً يا ${studentFullName}! لقد حصلتِ على العلامة الكاملة بامتياز.`;
+                    triggerCelebration();
+                } else if (wrongQuestionsList.length > 0) {
+                    document.getElementById('status-badge').innerText = "تم التصحيح - توجد أخطاء قابلة للتدارك";
+                    document.getElementById('score-text').innerText = `نتيجة المحاولة الأولى هي ${initialScore} من 40. يمكنك تدارك الأسئلة الخاطئة الآن.`;
+                    document.getElementById('btnRetryWrong').style.display = 'block';
+                }
 
-            } else {
-                let reviewGainedScore = 0;
+                const radios = document.querySelectorAll('input[type="radio"]');
+                radios.forEach(r => r.disabled = true);
+                document.getElementById('submitBtn').style.display = 'none';
+
+                const resultBox = document.getElementById('result-box');
+                resultBox.style.display = 'block';
+                resultBox.scrollIntoView({ behavior: 'smooth' });
+            } else if (currentStage === 'retry') {
+                let retryEarned = 0;
                 activeData.forEach((q, index) => {
                     const selected = document.querySelector(`input[name="question_${currentStage}_${index}"]:checked`);
                     const selectedVal = parseInt(selected.value);
 
                     if (selectedVal === q.correct) {
-                        reviewGainedScore += q.weight;
+                        retryEarned += q.weight;
                         document.getElementById(`label-${currentStage}-${index}-${selectedVal}`).classList.add('correct-ans');
                     } else {
                         document.getElementById(`label-${currentStage}-${index}-${selectedVal}`).classList.add('wrong-ans');
                         document.getElementById(`label-${currentStage}-${index}-${q.correct}`).classList.add('correct-ans');
                     }
-
-                    const radios = document.querySelectorAll(`input[name="question_${currentStage}_${index}"]`);
-                    radios.forEach(r => r.disabled = true);
                 });
 
-                finalScore = initialScore + reviewGainedScore;
-                if (finalScore > 40) finalScore = 40;
+                finalScore = initialScore + retryEarned;
+                document.getElementById('second-score-card').style.display = 'block';
+                document.getElementById('after-score-val').innerText = `${finalScore} / 40`;
+                document.getElementById('status-badge').innerText = "تم إتمام التدارك بنجاح";
+                document.getElementById('score-text').innerText = `ممتاز يا ${studentFullName}! تم تعويض بعض العلامات وأصبح مجموعك النهائي ${finalScore} من 40.`;
 
+                if (finalScore === 40) {
+                    triggerCelebration();
+                }
+
+                const radios = document.querySelectorAll('input[type="radio"]');
+                radios.forEach(r => r.disabled = true);
                 document.getElementById('submitBtn').style.display = 'none';
-                showFinalReport(finalScore);
+                document.getElementById('btnRetryWrong').style.display = 'none';
+
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
             }
-        }
-
-        function showFirstReport(score) {
-            const resultBox = document.getElementById('result-box');
-            resultBox.style.display = 'block';
-            document.getElementById('first-score-val').innerText = `${score} / 40`;
-
-            const scoreText = document.getElementById('score-text');
-            const statusBadge = document.getElementById('status-badge');
-
-            if (score === 40) {
-                statusBadge.innerText = "علامة كاملة - ممتاز!";
-                scoreText.innerText = `أداء مذهل يا ${studentFullName}! لقد أجبت على كافة الأسئلة الجديدة بشكل صحيح تماماً.`;
-                triggerCelebration();
-            } else if (score >= 30) {
-                statusBadge.innerText = "نتيجة ممتازة";
-                scoreText.innerText = `أداء رائع جداً يا ${studentFullName}، لديك إجابات صحيحة في أغلب الأسئلة المطورة.`;
-            } else if (score >= 20) {
-                statusBadge.innerText = "نتيجة جيدة";
-                scoreText.innerText = `مستوى جيد يا ${studentFullName}, يمكنك تدارك الأخطاء وتحسين مستواك أكثر.`;
-            } else {
-                statusBadge.innerText = "تحتاج للمزيد من المراجعة";
-                scoreText.innerText = `ننصحك بمراجعة الأسئلة الخاطئة يا ${studentFullName} وإعادة محاولة تداركها.`;
-            }
-
-            if (wrongQuestionsList.length > 0) {
-                document.getElementById('btnRetryWrong').style.display = 'block';
-            }
-
-            resultBox.scrollIntoView({ behavior: 'smooth' });
         }
 
         function startWrongReview() {
-            currentStage = 'review';
+            currentStage = 'retry';
             activeData = [...wrongQuestionsList];
             wrongQuestionsList = [];
 
-            document.getElementById('result-box').style.display = 'none';
-            document.getElementById('section-subtitle').innerText = `تدارك الأخطاء (${activeData.length} أسئلة)`;
+            document.getElementById('section-subtitle').innerText = "محاولة تدارك الأسئلة الخاطئة";
             document.getElementById('submitBtn').style.display = 'block';
-            document.getElementById('submitBtn').innerText = 'اعتماد إجابات التدارك';
+            document.getElementById('result-box').style.display = 'none';
 
-            isExamActive = true;
             renderQuestions();
             updateProgress();
         }
 
-        function showFinalReport(score) {
-            const resultBox = document.getElementById('result-box');
-            resultBox.style.display = 'block';
-
-            document.getElementById('result-box-title').innerText = "تقرير النتائج النهائي";
-            document.getElementById('second-score-card').style.display = 'block';
-            document.getElementById('after-score-val').innerText = `${score} / 40`;
-            document.getElementById('btnRetryWrong').style.display = 'none';
-
-            const scoreText = document.getElementById('score-text');
-            const statusBadge = document.getElementById('status-badge');
-
-            if (score === 40) {
-                statusBadge.innerText = "العلامة الكاملة بعد التدارك!";
-                scoreText.innerText = `ممتاز يا ${studentFullName}! استطعت تدارك جميع الأخطاء والوصول للعلامة الكاملة.`;
-                triggerCelebration();
-            } else {
-                statusBadge.innerText = "تم تحديث النتيجة";
-                scoreText.innerText = `عمل جيد يا ${studentFullName} في تدارك الأخطاء.`;
-            }
-
-            resultBox.scrollIntoView({ behavior: 'smooth' });
-        }
-
         function exitQuizSession() {
-            showCustomAlert("تم إغلاق الجلسة بنجاح. شكراً لكِ!");
+            if (confirm("هل أنت متأكدة من رغبتك في إغلاق نافذة الامتحان وحفظ النتيجة؟")) {
+                window.close();
+                // بديل في حال لم تفتح النافذة عبر سكريبت الخروج المباشر
+                document.body.innerHTML = `
+                    <div style="text-align:center; padding:50px; color:#00ff66; font-family:'Segoe UI';">
+                        <h2>تم إنهاء جلسة الامتحان وحفظ النتيجة بنجاح.</h2>
+                        <p style="color:#86efac; margin-top:10px;">شكراً لجهودك، يمكنك إغلاق الصفحة الآن.</p>
+                    </div>
+                `;
+            }
         }
     </script>
 </body>
-
 </html>
